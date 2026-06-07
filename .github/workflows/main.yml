@@ -1,26 +1,16 @@
 name: Dragonix Instagram Bot
 
 on:
+  schedule:
+    - cron: "*/5 * * * *"   # runs every 5 minutes
   workflow_dispatch:
-    inputs:
-      post_url:
-        description: "Instagram Post / Reel URL"
-        required: true
-
-      keyword:
-        description: "Trigger keyword in comments"
-        required: true
-
-      reply_text:
-        description: "Reply message"
-        required: true
 
 jobs:
-  bot:
+  run:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -32,8 +22,4 @@ jobs:
         run: pip install requests
 
       - name: Run Bot
-        env:
-          INPUT_POST_URL: ${{ inputs.post_url }}
-          INPUT_KEYWORD: ${{ inputs.keyword }}
-          INPUT_REPLY: ${{ inputs.reply_text }}
         run: python agent.py
