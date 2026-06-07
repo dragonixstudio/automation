@@ -1,41 +1,26 @@
 name: Dragonix Instagram Bot
 
 on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes
+
   workflow_dispatch:
-    inputs:
-      post_url:
-        description: "Instagram Post/Reel URL"
-        required: true
-
-      keyword:
-        description: "Trigger keyword (e.g. course)"
-        required: true
-
-      comment_reply:
-        description: "Public comment reply message"
-        required: true
-
-      dm_reply:
-        description: "DM message (optional)"
-        required: false
 
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - run: pip install requests
+      - name: Install dependencies
+        run: pip install requests
 
       - name: Run Bot
-        env:
-          INPUT_POST_URL: ${{ inputs.post_url }}
-          INPUT_KEYWORD: ${{ inputs.keyword }}
-          INPUT_COMMENT_REPLY: ${{ inputs.comment_reply }}
-          INPUT_DM_REPLY: ${{ inputs.dm_reply }}
         run: python agent.py
