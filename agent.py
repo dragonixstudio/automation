@@ -5,8 +5,8 @@ import re
 from datetime import datetime
 
 # --- Configuration & Secrets ---
-ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
-IG_USER_ID = os.getenv('IG_USER_ID')
+ACCESS_TOKEN = os.getenv('EAGJWzt7D2rABRlLiUdzlcKtfuZBhWZAKcXZCwZAj0TAzhwnwLCt4AqKzC6S4Q44vLvAGn9r2JjQLBY3eoUVIReXT7BnSYtZBcgysw61JviXFopgTb1LjZCmZBoZChZA87FPZBp4CRULpHxcIu2fKIFtGcI0npSfufNZAKMSsD2329X2dx9L8qwHRcVq7ZA3jbu5OCZBF86LZCrpCrZCXDRkCMG35KE8oJn30shuPHQeYqbEvt4ZBuYLN4mQstSmuUsZAapewZCN3iSscJtdqW5UQYZD')
+IG_USER_ID = os.getenv('17841417547403100')
 
 # --- Inputs from GitHub Web Form ---
 INPUT_POST_URL = os.getenv('INPUT_POST_URL', '').strip()
