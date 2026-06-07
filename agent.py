@@ -4,27 +4,17 @@ import re
 from datetime import datetime
 
 # =========================
-# CONFIG (TEMP TEST MODE)
+# CONFIG (PUT YOUR NEW TOKEN HERE)
 # =========================
 ACCESS_TOKEN = "EAGJWzt7D2rABRlLiUdzlcKtfuZBhWZAKcXZCwZAj0TAzhwnwLCt4AqKzC6S4Q44vLvAGn9r2JjQLBY3eoUVIReXT7BnSYtZBcgysw61JviXFopgTb1LjZCmZBoZChZA87FPZBp4CRULpHxcIu2fKIFtGcI0npSfufNZAKMSsD2329X2dx9L8qwHRcVq7ZA3jbu5OCZBF86LZCrpCrZCXDRkCMG35KE8oJn30shuPHQeYqbEvt4ZBuYLN4mQstSmuUsZAapewZCN3iSscJtdqW5UQYZD"
-IG_USER_ID = "17841417547403100"
+IG_USER_ID = "1784141754740310"
 
 GRAPH_API_VERSION = "v19.0"
 
 RULES_FILE = "rules.json"
 DB_FILE = "processed_comments.json"
 
-# =========================
-# INPUTS (FROM GITHUB)
-# =========================
-INPUT_POST_URL = ""
-INPUT_KEYWORD = ""
-INPUT_REPLY = ""
 
-
-# =========================
-# LOAD / SAVE JSON
-# =========================
 def load_json(file):
     try:
         with open(file, "r") as f:
@@ -38,83 +28,58 @@ def save_json(file, data):
         json.dump(data, f, indent=2)
 
 
-# =========================
-# SHORTCODE EXTRACTOR
-# =========================
-def extract_shortcode(url):
-    match = re.search(r"(?:p|reel)/([^/?&]+)", url)
-    return match.group(1) if match else None
-
-
-# =========================
-# MAIN BOT
-# =========================
 def main():
-    print("🤖 Multi Bot Started:", datetime.now())
+    print("🤖 Bot started:", datetime.now())
 
     rules = load_json(RULES_FILE)
     processed = load_json(DB_FILE)
-
-    # =========================
-    # OPTIONAL: ADD NEW RULE
-    # =========================
-    if INPUT_POST_URL and INPUT_KEYWORD and INPUT_REPLY:
-        shortcode = extract_shortcode(INPUT_POST_URL)
-
-        if shortcode:
-            rules[shortcode] = {
-                "keyword": INPUT_KEYWORD.lower(),
-                "reply": INPUT_REPLY
-            }
-
-            save_json(RULES_FILE, rules)
-            print(f"✅ Rule added for post: {shortcode}")
 
     if not rules:
         print("⚠️ No rules found")
         return
 
-    # =========================
-    # FETCH POSTS
-    # =========================
-    media_url = (
-        f"https://graph.facebook.com/{GRAPH_API_VERSION}/"
-        f"{IG_USER_ID}/media?fields=id,shortcode&access_token={ACCESS_TOKEN}"
-    )
-
+    media_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{IG_USER_ID}/media?fields=id,shortcode&access_token={ACCESS_TOKEN}"
     media = requests.get(media_url).json().get("data", [])
 
     for post in media:
-        shortcode = post.get("shortcode")
-
-        if shortcode not in rules:
-            continue
-
-        rule = rules[shortcode]
-
-        comments_url = (
-            f"https://graph.facebook.com/{GRAPH_API_VERSION}/"
-            f"{post['id']}/comments?access_token={ACCESS_TOKEN}"
-        )
-
+        comments_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{post['id']}/comments?access_token={ACCESS_TOKEN}"
         comments = requests.get(comments_url).json().get("data", [])
 
         for c in comments:
             cid = c["id"]
             text = c.get("text", "").lower()
 
-            if rule["keyword"] in text and cid not in processed:
-                print(f"🎯 Trigger on {shortcode} → {cid}")
+            if cid in processed:
+                continue
 
-                reply_url = (
-                    f"https://graph.facebook.com/{GRAPH_API_VERSION}/"
-                    f"{cid}/replies"
-                )
+            # 🔥 GLOBAL TRIGGER SYSTEM (like ManyChat)
+            if "course" in text:
+
+                print("🎯 Trigger found:", cid)
+
+                # Public reply
+                reply_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{cid}/replies"
 
                 requests.post(reply_url, data={
-                    "message": rule["reply"],
+                    "message": "Here is your course link 👇",
                     "access_token": ACCESS_TOKEN
                 })
+
+                # Optional DM attempt (only works if permissions allow)
+                try:
+                    user_id = c.get("from", {}).get("id")
+
+                    if user_id:
+                        dm_url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/me/messages"
+
+                        requests.post(dm_url, json={
+                            "recipient": {"id": user_id},
+                            "message": {"text": "Here is your course link 👇"},
+                            "access_token": ACCESS_TOKEN
+                        })
+
+                except Exception as e:
+                    print("DM error:", e)
 
                 processed.append(cid)
 
