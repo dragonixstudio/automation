@@ -1,4 +1,3 @@
-import os
 import requests
 import json
 import re
@@ -16,13 +15,16 @@ RULES_FILE = "rules.json"
 DB_FILE = "processed_comments.json"
 
 # =========================
-# INPUTS FROM GITHUB
+# INPUTS (FROM GITHUB)
 # =========================
-INPUT_POST_URL = os.getenv("INPUT_POST_URL", "").strip()
-INPUT_KEYWORD = os.getenv("INPUT_KEYWORD", "").strip().lower()
-INPUT_REPLY = os.getenv("INPUT_REPLY", "").strip()
+INPUT_POST_URL = ""
+INPUT_KEYWORD = ""
+INPUT_REPLY = ""
 
 
+# =========================
+# LOAD / SAVE JSON
+# =========================
 def load_json(file):
     try:
         with open(file, "r") as f:
@@ -36,38 +38,44 @@ def save_json(file, data):
         json.dump(data, f, indent=2)
 
 
+# =========================
+# SHORTCODE EXTRACTOR
+# =========================
 def extract_shortcode(url):
     match = re.search(r"(?:p|reel)/([^/?&]+)", url)
     return match.group(1) if match else None
 
 
+# =========================
+# MAIN BOT
+# =========================
 def main():
-    print("🤖 Dragonix Bot Started:", datetime.now())
+    print("🤖 Multi Bot Started:", datetime.now())
 
     rules = load_json(RULES_FILE)
     processed = load_json(DB_FILE)
 
     # =========================
-    # CREATE RULE FROM INPUT
+    # OPTIONAL: ADD NEW RULE
     # =========================
     if INPUT_POST_URL and INPUT_KEYWORD and INPUT_REPLY:
         shortcode = extract_shortcode(INPUT_POST_URL)
 
         if shortcode:
             rules[shortcode] = {
-                "keyword": INPUT_KEYWORD,
-                "reply_text": INPUT_REPLY
+                "keyword": INPUT_KEYWORD.lower(),
+                "reply": INPUT_REPLY
             }
 
             save_json(RULES_FILE, rules)
-            print(f"✅ Rule saved for post: {shortcode}")
+            print(f"✅ Rule added for post: {shortcode}")
 
     if not rules:
-        print("⚠️ No rules found. Add one from GitHub workflow.")
+        print("⚠️ No rules found")
         return
 
     # =========================
-    # FETCH IG POSTS
+    # FETCH POSTS
     # =========================
     media_url = (
         f"https://graph.facebook.com/{GRAPH_API_VERSION}/"
@@ -96,24 +104,22 @@ def main():
             text = c.get("text", "").lower()
 
             if rule["keyword"] in text and cid not in processed:
-                print(f"🎯 Match found: {cid}")
+                print(f"🎯 Trigger on {shortcode} → {cid}")
 
                 reply_url = (
                     f"https://graph.facebook.com/{GRAPH_API_VERSION}/"
                     f"{cid}/replies"
                 )
 
-                res = requests.post(reply_url, data={
-                    "message": rule["reply_text"],
+                requests.post(reply_url, data={
+                    "message": rule["reply"],
                     "access_token": ACCESS_TOKEN
-                }).json()
-
-                print("Reply response:", res)
+                })
 
                 processed.append(cid)
 
     save_json(DB_FILE, processed)
-    print("🏁 Bot finished")
+    print("🏁 Done")
 
 
 if __name__ == "__main__":
